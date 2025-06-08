@@ -1,0 +1,10 @@
+# rust
+/target
+
+# frontend
+/web/node_modules
+/web/dist
+
+# etc
+/BUILD_NUMBER.txt
+/BUILD_NUMBER_RELEASE.txt

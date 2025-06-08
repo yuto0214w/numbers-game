@@ -1,0 +1,42 @@
+{
+  "room_id": "00000000-0000-0000-0000-000000000000",
+  "board_size": 8,
+  "top_players": [],
+  "top_pieces": [
+    { "position": [0, 0], "number": 3 },
+    { "position": [1, 0], "number": 3 },
+    { "position": [2, 0], "number": 3 },
+    { "position": [3, 0], "number": 3 },
+    { "position": [4, 0], "number": 3 },
+    { "position": [5, 0], "number": 3 },
+    { "position": [6, 0], "number": 3 },
+    { "position": [7, 0], "number": 3 },
+    { "position": [0, 1], "number": 3 },
+    { "position": [1, 1], "number": 3 },
+    { "position": [2, 1], "number": 3 },
+    { "position": [3, 1], "number": 3 },
+    { "position": [4, 1], "number": 3 },
+    { "position": [5, 1], "number": 3 },
+    { "position": [6, 1], "number": 3 },
+    { "position": [7, 1], "number": 3 }
+  ],
+  "bottom_players": [],
+  "bottom_pieces": [
+    { "position": [0, 7], "number": 3 },
+    { "position": [1, 7], "number": 3 },
+    { "position": [2, 7], "number": 3 },
+    { "position": [3, 7], "number": 3 },
+    { "position": [4, 7], "number": 3 },
+    { "position": [5, 7], "number": 3 },
+    { "position": [6, 7], "number": 3 },
+    { "position": [7, 7], "number": 3 },
+    { "position": [0, 6], "number": 3 },
+    { "position": [1, 6], "number": 3 },
+    { "position": [2, 6], "number": 3 },
+    { "position": [3, 6], "number": 3 },
+    { "position": [4, 6], "number": 3 },
+    { "position": [5, 6], "number": 3 },
+    { "position": [6, 6], "number": 3 },
+    { "position": [7, 6], "number": 3 }
+  ]
+}
