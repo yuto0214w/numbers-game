@@ -1,14 +1,39 @@
-# numbers
+# numbers-game
+
+チェッカーと独自の要素を組み合わせたオリジナルのボードゲームです。
+
 ## 実行
-実行前に[Rust](https://www.rust-lang.org/tools/install)と[Node.js](https://nodejs.org/en/download)のインストールが必要です。
+
+実行前に [Rust](https://www.rust-lang.org/) と [Node.js](https://nodejs.org/) のインストールが必要です。
+
+ゲームサーバー:
+
 ```
-cd web
-npm install
-npm run build
-cd ..
-cargo run --release
+cargo r --bin numbers-server
 ```
+
+フロントエンド:
+
+```
+cd apps/frontend && npm i && npm run dev
+```
+
+## 開発
+
+型の生成:
+
+```
+# まだ済んでいなければ
+cd apps/frontend && npm i && cd ../..
+
+cargo r --bin numbers-comm-types
+```
+
+## 計画
+
+https://hackmd.io/@yuto0214w/r1YJI5JBex
+
 ## 感謝
+
 - @kagesakura
-  - 助言やゲームデザインの相談等
-  - src/deser_utils.rs, web/src/connection.js
+  - コードに関する助言やゲームデザインの相談等

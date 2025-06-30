@@ -1,34 +1,15 @@
-[package]
-name = "numbers"
-version = "0.1.0"
-edition = "2021"
+[workspace]
+resolver = "3"
+members = ["apps/backend", "libs/types"]
 
 [profile.release]
 panic = "abort"
 lto = true
 
-[dependencies]
-axum = { version = "0.7", features = ["ws"] }
-chrono = "0.4"
-futures-util = "0.3"
-hyper = "1.4"
-hyper-util = "0.1"
-parking_lot = "0.12"
-rand = "0.8"
-serde = { version = "1.0", features = ["derive"] }
-serde_json = { version = "1.0", features = ["preserve_order"] }
-tokio = { version = "1", features = ["rt-multi-thread", "sync"] }
-tower = { version = "0.5", features = ["util"] }
-uuid = { version = "1.10", features = [
-    "v4",
-    "fast-rng",
-    "macro-diagnostics",
-    "serde",
-] }
-
-[target."cfg(windows)".dependencies]
-windows-sys = { version = "0.59", features = [
-    "Win32_Foundation",
-    "Win32_System_Console",
-    "Win32_System_Threading",
-] }
+# temporary fix
+# see https://github.com/serde-rs/serde/pull/2525
+[patch.crates-io]
+serde = { git = "https://github.com/Astavie/serde.git", branch = "integer-tags-for-enums" }
+serde_derive = { git = "https://github.com/Astavie/serde.git", branch = "integer-tags-for-enums" }
+serde_derive_internals = { git = "https://github.com/Astavie/serde.git", branch = "integer-tags-for-enums" }
+schemars = { git = "https://github.com/yuto0214w/schemars.git" }

@@ -1,10 +1,6 @@
-# rust
+# フロントエンドのgitignoreについては、テンプレートに同梱されたものを使用し、統合はしない
+
 /target
 
-# frontend
-/web/node_modules
-/web/dist
-
-# etc
-/BUILD_NUMBER.txt
-/BUILD_NUMBER_RELEASE.txt
+/apps/backend/BUILD_NUMBER.txt
+/apps/backend/BUILD_NUMBER_RELEASE.txt

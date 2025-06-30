@@ -1,0 +1,61 @@
+diff --git a/node_modules/json-schema-to-typescript/dist/src/normalizer.js b/node_modules/json-schema-to-typescript/dist/src/normalizer.js
+index 8a9b0e8..6c6c403 100644
+--- a/node_modules/json-schema-to-typescript/dist/src/normalizer.js
++++ b/node_modules/json-schema-to-typescript/dist/src/normalizer.js
+@@ -132,6 +132,24 @@ rules.set('Remove maxItems if it is big enough to likely cause OOMs', (schema, _
+         delete schema.maxItems;
+     }
+ });
++// NOTE: https://json-schema.org/draft/2020-12#introduction
++//
++// Keywords for Applying Subschemas to Arrays
++// https://json-schema.org/draft/2019-09/draft-handrews-json-schema-02#rfc.section.9.3.1
++// https://json-schema.org/draft/2020-12/json-schema-core#section-10.3.1
++rules.set('Support the `prefixItems` key from draft 2020-12', schema => {
++    if (!isArrayType(schema)) {
++        return;
++    }
++    if (schema.hasOwnProperty('prefixItems')) {
++        if (schema.hasOwnProperty('items')) {
++            schema.additionalItems = schema.items;
++            delete schema.items;
++        }
++        schema.items = schema.prefixItems;
++        delete schema.prefixItems;
++    }
++});
+ rules.set('Normalize schema.items', (schema, _fileName, options) => {
+     if (options.ignoreMinAndMaxItems) {
+         return;
+diff --git a/node_modules/json-schema-to-typescript/src/normalizer.ts b/node_modules/json-schema-to-typescript/src/normalizer.ts
+index 2d0d534..01d63a8 100644
+--- a/node_modules/json-schema-to-typescript/src/normalizer.ts
++++ b/node_modules/json-schema-to-typescript/src/normalizer.ts
+@@ -161,6 +161,27 @@ rules.set('Remove maxItems if it is big enough to likely cause OOMs', (schema, _
+   }
+ })
+ 
++// NOTE: https://json-schema.org/draft/2020-12#introduction
++//
++// Keywords for Applying Subschemas to Arrays
++// https://json-schema.org/draft/2019-09/draft-handrews-json-schema-02#rfc.section.9.3.1
++// https://json-schema.org/draft/2020-12/json-schema-core#section-10.3.1
++rules.set('Support the `prefixItems` key from draft 2020-12', schema => {
++  if (!isArrayType(schema)) {
++    return
++  }
++
++  if (schema.hasOwnProperty('prefixItems')) {
++    if (schema.hasOwnProperty('items')) {
++      schema.additionalItems = schema.items as any
++      delete schema.items
++    }
++
++    schema.items = schema.prefixItems as any
++    delete schema.prefixItems
++  }
++})
++
+ rules.set('Normalize schema.items', (schema, _fileName, options) => {
+   if (options.ignoreMinAndMaxItems) {
+     return

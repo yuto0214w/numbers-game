@@ -1,0 +1,64 @@
+@startuml name
+
+!pragma teoz true
+
+skinparam Style strictuml
+skinparam Monochrome reverse
+
+actor "Client 1" as A
+participant Server
+actor "Client 2" as B
+
+A -> Server: ゲーム設定を記述したJSONをbodyとして\n/rooms/newにPOST
+note over Server: セッションを作成
+Server -> A: 部屋IDを記述したJSONをcontentとして\n201 Createdを返す
+A -> Server: /rooms/<id>にGET
+Server -> A: 現在のターン、各チームのプレイヤーと\n駒の情報を記述したJSONをcontentとして\n200 OKを返す
+A -> Server: /rooms/<id>/ws宛てにWebSocket通信を要求
+A <-> Server: 接続を確立
+activate Server
+
+A -> B: URLを伝える
+
+B -> Server: /rooms/<id>にGET
+Server -> B: 同上\n200 OKを返す
+B -> Server: /rooms/<id>/ws宛てにWebSocket通信を要求
+B <-> Server: 接続を確立
+activate Server
+
+== WebSocket ==
+
+A -> Server: t=JoinTeam, c=Side
+note over Server: プレイヤー1を作成
+Server -> A: t=PlayerJoin, i=PublicIdA, c=[Side,NameA]
+& Server -> B: t=PlayerJoin, i=PublicIdA, c=[Side,NameA]
+Server -> A: t=UserCreated, c=[true,PrivateIdA,PublicIdA]
+A -> Server: t=Resume, c=PrivateIdA
+Server -> A: t=PlayerAfk, i=PublicIdA, c=false
+& Server -> B: t=PlayerAfk, i=PublicIdA, c=false
+Server -> A: t=Authorized
+
+B -> Server: t=JoinTeam, c=Side
+note over Server: プレイヤー2を作成
+Server -> A: t=PlayerJoin, i=PublicIdB, c=[Side,NameB]
+& Server -> B: t=PlayerJoin, i=PublicIdB, c=[Side,NameB]
+Server -> B: t=UserCreated, c=[true,PrivateIdB,PublicIdB]
+B -> Server: t=Resume, c=PrivateIdB
+Server -> A: t=PlayerAfk, i=PublicIdB, c=false
+& Server -> B: t=PlayerAfk, i=PublicIdB, c=false
+Server -> B: t=Authorized
+
+A -> Server: t=SelectPiece, c=[x,y]
+Server -> A: t=SelectPiece, i=PublicIdA, c=[x,y]
+& Server -> B: t=SelectPiece, i=PublicIdA, c=[x,y]
+
+A -> Server: t=MovePiece, c=[[x1,y1],[x2,y2]]
+note over Server: この動きが不可能ならば
+Server -> A: t=ActionNotAccepted
+note over Server: この動きが可能ならば
+Server -> A: t=MovePiece, i=PublicIdA, c=[ToggleTurn,[x1,y1],[x2,y2]]
+& Server -> B: t=MovePiece, i=PublicIdA, c=[ToggleTurn,[x1,y1],[x2,y2]]
+
+...and so on...
+
+@enduml
