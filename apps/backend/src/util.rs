@@ -213,24 +213,17 @@ where
 pub fn windows_setup() {
     use std::os::windows::io::AsRawHandle as _;
     use windows_sys::Win32::{
-        Foundation::{GetLastError, HANDLE},
-        System::{
-            Console::{ENABLE_VIRTUAL_TERMINAL_PROCESSING, GetConsoleMode, SetConsoleMode},
-            Threading::ExitProcess,
-        },
+        Foundation::HANDLE,
+        System::Console::{ENABLE_VIRTUAL_TERMINAL_PROCESSING, GetConsoleMode, SetConsoleMode},
     };
     #[inline(always)]
     unsafe fn enable_vt(handle: HANDLE) {
         unsafe {
             let mut console_mode = 0;
-            if GetConsoleMode(handle, &mut console_mode) == 0 {
-                eprintln!("Error: failed to get console mode");
-                ExitProcess(GetLastError());
-            }
-            console_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
-            if SetConsoleMode(handle, console_mode) == 0 {
-                eprintln!("Error: failed to set console mode");
-                ExitProcess(GetLastError());
+            if GetConsoleMode(handle, &mut console_mode) != 0 {
+                // GetConsoleMode succeeded
+                console_mode |= ENABLE_VIRTUAL_TERMINAL_PROCESSING;
+                SetConsoleMode(handle, console_mode);
             }
         }
     }
