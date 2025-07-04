@@ -1,16 +1,13 @@
 use std::{net::IpAddr, sync::Arc};
 
 use axum::{
-    Error as AxumError,
     body::Bytes,
     extract::ws::{CloseFrame, Message, Utf8Bytes, WebSocket, close_code},
 };
-use futures_util::{SinkExt as _, StreamExt as _, stream::SplitSink};
+use futures_util::{SinkExt as _, StreamExt as _};
 use numbers_comm_types::{
     RoomId,
-    ws::{
-        CreateUser, PlayerAction, PlayerActionWithAuth, PlayerActionWithoutAuth, Responses,
-    },
+    ws::{CreateUser, PlayerAction, PlayerActionWithAuth, PlayerActionWithoutAuth, Responses},
 };
 use parking_lot::Mutex;
 use tokio::sync::mpsc;
@@ -19,8 +16,6 @@ use uuid::Uuid;
 use crate::util::{WebSocketReceiveAction, WebSocketSendAction, generate_name, log_error, log_ws};
 
 use super::{QUEUE_MESSAGE_LIMIT, session::map::GameSessionLock};
-
-// TODO: このコードには不備があります。
 
 #[inline(always)]
 pub async fn handle_socket(mut socket: WebSocket, ip: IpAddr, room_id: RoomId) {
@@ -35,55 +30,47 @@ pub async fn handle_socket(mut socket: WebSocket, ip: IpAddr, room_id: RoomId) {
         Some(Ok(Message::Pong(_))) => log_ws(ip, WebSocketReceiveAction::GotPong),
         _ => return,
     }
+
     let session_lock = GameSessionLock::new(room_id);
-    // vvv 通信関連の変数定義ここから vvv
     let mut queue_rx = session_lock.with_read(|session| session.subscribe_queue());
     let (conn_tx, mut conn_rx) = mpsc::channel(QUEUE_MESSAGE_LIMIT);
     let (mut sender, mut receiver) = socket.split();
-    // ^^^ 通信関連の変数定義ここまで ^^^
+
     let mut send_task = tokio::spawn(async move {
-        #[inline(always)]
-        async fn send_text_and_log(
-            text: String,
-            sender: &mut SplitSink<WebSocket, Message>,
-            ip: IpAddr,
-        ) -> Result<(), AxumError> {
-            let res = sender.send(Message::Text(text.to_owned().into())).await;
-            match res {
-                Ok(_) => log_ws(ip, Ok(WebSocketSendAction::SendText(&text))),
-                Err(_) => log_ws(ip, Err(WebSocketSendAction::SendText(&text))),
-            }
-            res
+        macro_rules! send_text_message {
+            ($text:expr) => {{
+                let res = sender.send(Message::Text($text.to_owned().into())).await;
+                match res {
+                    Ok(_) => log_ws(ip, Ok(WebSocketSendAction::SendText($text))),
+                    Err(_) => log_ws(ip, Err(WebSocketSendAction::SendText($text))),
+                }
+                res
+            }};
         }
-        #[inline(always)]
-        async fn send_close_and_log(
-            code: u16,
-            reason: &'static str,
-            sender: &mut SplitSink<WebSocket, Message>,
-            ip: IpAddr,
-        ) {
-            let cf = CloseFrame {
-                code,
-                reason: Utf8Bytes::from_static(reason),
-            };
-            match sender.send(Message::Close(Some(cf.clone()))).await {
-                Ok(_) => log_ws(ip, Ok(WebSocketSendAction::SendClose(cf))),
-                Err(_) => log_ws(ip, Err(WebSocketSendAction::SendClose(cf))),
-            }
+        macro_rules! send_close_message {
+            ($code:expr, $reason:literal) => {{
+                let cf = CloseFrame {
+                    code: $code,
+                    reason: Utf8Bytes::from_static($reason),
+                };
+                match sender.send(Message::Close(Some(cf.clone()))).await {
+                    Ok(_) => log_ws(ip, Ok(WebSocketSendAction::SendClose(cf))),
+                    Err(_) => log_ws(ip, Err(WebSocketSendAction::SendClose(cf))),
+                }
+            }};
         }
         loop {
             tokio::select! {
                 val = queue_rx.recv() => match val {
                     Ok(event) => {
                         let event_str = serde_json::to_string(&event).unwrap();
-                        if send_text_and_log(event_str, &mut sender, ip).await.is_err() {
+                        if send_text_message!(&event_str).is_err() {
                             break;
                         }
                     }
                     Err(error) => {
                         log_error!("queue_recv", error);
-                        send_close_and_log(close_code::AGAIN, "Server Lagged", &mut sender, ip)
-                            .await;
+                        send_close_message!(close_code::AGAIN, "Server Lagged");
                         break;
                     }
                 },
@@ -93,20 +80,20 @@ pub async fn handle_socket(mut socket: WebSocket, ip: IpAddr, room_id: RoomId) {
                     | Responses::ActionNotAccepted
                     | Responses::SessionExpired => {
                         let text = serde_json::to_string(val.as_ref().unwrap()).unwrap();
-                        if send_text_and_log(text, &mut sender, ip).await.is_err() {
+                        if send_text_message!(&text).is_err() {
                             break;
                         }
                     }
                     Responses::AuthorizedInternal(_) => unreachable!(),
                     Responses::GotInvalidData => {
-                        send_close_and_log(close_code::INVALID, "Invalid Data", &mut sender, ip)
-                            .await;
+                        send_close_message!(close_code::INVALID, "Invalid Data");
                         break;
                     }
                 },
             }
         }
     });
+
     let private_id: Arc<Mutex<Option<Uuid>>> = Arc::new(Mutex::new(None));
     let mut recv_task = tokio::spawn({
         let private_id = Arc::clone(&private_id);
@@ -119,10 +106,7 @@ pub async fn handle_socket(mut socket: WebSocket, ip: IpAddr, room_id: RoomId) {
                         if let Ok(action) = serde_json::from_str::<PlayerAction>(&text) {
                             let cloned_private_id = *private_id.lock();
                             if let Some(msg) = handle_game(action, room_id, cloned_private_id) {
-                                if let Responses::AuthorizedInternal(
-                                    authorized_private_id,
-                                ) = msg
-                                {
+                                if let Responses::AuthorizedInternal(authorized_private_id) = msg {
                                     *private_id.lock() = Some(authorized_private_id);
                                     permit.send(Responses::Authorized);
                                 } else {
@@ -142,6 +126,7 @@ pub async fn handle_socket(mut socket: WebSocket, ip: IpAddr, room_id: RoomId) {
             }
         }
     });
+
     tokio::select! {
         _ = (&mut send_task) => recv_task.abort(),
         _ = (&mut recv_task) => send_task.abort(),

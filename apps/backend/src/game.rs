@@ -1,11 +1,11 @@
 /// 部屋の作成とWebSocket通信への誘導
 pub mod http;
 
-/// プレイヤーの行動の処理・配信
-mod ws;
-
-/// 盤面に関する処理やデータの保持
+/// 部屋情報の保持とロジックの定義
 mod session;
+
+/// game::sessionで定義された部屋情報の操作
+mod ws;
 
 const MINIMUM_SERVER_VERSION: usize = 1;
 
